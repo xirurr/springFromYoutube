@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class UserController {
 
     @Autowired
-    private UserRepo userRepo2;
+    private UserRepo userRepo;
 
     @GetMapping
     public String userList(Model model){
