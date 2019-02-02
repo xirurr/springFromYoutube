@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,10 +15,13 @@ import web.domain.Message;
 import web.domain.User;
 import web.repositories.MessageRepository;
 
+import javax.validation.Valid;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @Controller
 public class MainController {
@@ -32,7 +37,7 @@ public class MainController {
     }
 
     @GetMapping("/main")
-    public String main(@RequestParam(required = false, defaultValue = "")String filter, Model model) {
+    public String main(@RequestParam(required = false, defaultValue = "") String filter, Model model) {
         Iterable<Message> users;
         if (filter == null || filter.isEmpty() || filter.equals("")) {
             users = messageRepository.findAll();
@@ -40,35 +45,42 @@ public class MainController {
             users = messageRepository.findByTag(filter);
         }
         model.addAttribute("messages", users);
-        model.addAttribute("filter",filter);
+        model.addAttribute("filter", filter);
         return "main";
     }
 
     @PostMapping("/main")
     public String add(@AuthenticationPrincipal User user,
-                      @RequestParam String text,
-                      @RequestParam String tag, Map<String, Object> model,
+                      @Valid Message message,
+                      BindingResult bindingResult,// аргумент всегда перед аргументом MODEL
+                      Model model,
                       @RequestParam("file") MultipartFile file
     ) throws IOException {
-        Message message = new Message(text, tag, user);
+        message.setAuthor(user);
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errorsMap = ControllerUtils.getErrors(bindingResult);
+            model.mergeAttributes(errorsMap);
+            model.addAttribute("message",message);
+        } else {
+            if (file != null && !file.getOriginalFilename().isEmpty()) {
+                File uploadDir = new File(uploadPath);
+                if (!uploadDir.exists()) {
 
-        if (file !=null && !file.getOriginalFilename().isEmpty()){
-            File uploadDir = new File(uploadPath);
-            if (!uploadDir.exists()){
+                    uploadDir.mkdir();
+                }
 
-                uploadDir.mkdir();
+                String filename = UUID.randomUUID().toString() + "." + file.getOriginalFilename();
+
+                file.transferTo(new File(uploadPath + "//" + filename));
+                message.setFilename(filename);
             }
-
-            String filename = UUID.randomUUID().toString()+"."+file.getOriginalFilename();
-
-            file.transferTo(new File(uploadPath+"//"+filename));
-            message.setFilename(filename);
+            model.addAttribute("message",null);
+            messageRepository.save(message);
         }
-        messageRepository.save(message);
-
         Iterable<Message> messages = messageRepository.findAll();
-        model.put("messages", messages);
+        model.addAttribute("messages", messages);
         return "main";
     }
+
 
 }

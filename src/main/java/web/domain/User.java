@@ -4,15 +4,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.validator.constraints.Email;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 import java.util.Collection;
 import java.util.Set;
 
 @Entity
-@Table(name="usr")
+@Table(name = "usr")
 @NoArgsConstructor
 @RequiredArgsConstructor
 @Data
@@ -20,14 +22,24 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
-    @NonNull private String username;
-    @NonNull private String password;
+
+    @NotBlank(message = "username cannot be blank")
+    @NonNull
+    private String username;
+
+    @NotBlank(message = "pwd cannot be blank")
+    @NonNull
+    private String password;
+
     private boolean active;
+
+    @Email(message = "email is not correct")
+    @NotBlank(message = "email cannot be blank")
     private String email;
     private String activationCode;
 
-    @ElementCollection(targetClass =  Role.class, fetch = FetchType.EAGER)
-    @CollectionTable(name ="user_role", joinColumns = @JoinColumn(name = "user_id"))
+    @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     private Set<Role> roles;
 
@@ -56,7 +68,7 @@ public class User implements UserDetails {
         return isActive();
     }
 
-    public boolean isAdmin(){
+    public boolean isAdmin() {
         return roles.contains(Role.ADMIN);
     }
 }
