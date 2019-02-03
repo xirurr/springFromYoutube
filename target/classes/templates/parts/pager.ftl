@@ -4,7 +4,6 @@
             totalPages = page.getTotalPages()
             pageNumber = page.getNumber()+1
 
-
             head = (pageNumber >4)?then([1,-1],[1,2,3])
             tail = (pageNumber <totalPages -3)?then([-1,totalPages],[totalPages-2,totalPages-1,totalPages])
             bodyBefore = (pageNumber >4 && pageNumber < totalPages -1)?then([pageNumber -2, pageNumber-1], [])

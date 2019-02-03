@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.CrudRepository;
 
 import web.domain.Message;
+import web.domain.User;
 
 import java.util.List;
 
@@ -14,4 +15,5 @@ import java.util.List;
 public interface MessageRepository extends CrudRepository<Message, Integer> {
     Page<Message> findByTag(String tag, Pageable pageable);
     Page<Message> findAll(Pageable pageable);
+    Page<Message> findByAuthor(User user, Pageable pageable);
 }

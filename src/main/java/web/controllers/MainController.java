@@ -46,15 +46,14 @@ public class MainController {
 
     @GetMapping("/main")
     public String main(@RequestParam(required = false, defaultValue = "") String filter,
-                       @PageableDefault(sort ={"id"}, direction = Sort.Direction.DESC) Pageable pageble,
+                       @PageableDefault(sort = {"id"}, direction = Sort.Direction.DESC) Pageable pageble,
                        Model model) {
         Page<Message> page;
         if (filter == null || filter.isEmpty() || filter.equals("")) {
             page = messageRepository.findAll(pageble);
         } else {
-            page = messageRepository.findByTag(filter,pageble);
+            page = messageRepository.findByTag(filter, pageble);
         }
-
         model.addAttribute("page", page);
         model.addAttribute("url", "/main");
         model.addAttribute("filter", filter);
@@ -66,22 +65,56 @@ public class MainController {
                       @Valid Message message,
                       BindingResult bindingResult,// аргумент всегда перед аргументом MODEL
                       Model model,
-                      @RequestParam("file") MultipartFile file
+                      @RequestParam("file") MultipartFile file,
+                      @PageableDefault(sort = {"id"}, direction = Sort.Direction.DESC) Pageable pageble
     ) throws IOException {
         message.setAuthor(user);
         if (bindingResult.hasErrors()) {
             Map<String, String> errorsMap = ControllerUtils.getErrors(bindingResult);
             model.mergeAttributes(errorsMap);
-            model.addAttribute("message",message);
+            model.addAttribute("message", message);
         } else {
             saveFile(message, file);
-            model.addAttribute("message",null);
+            model.addAttribute("message", null);
             messageRepository.save(message);
         }
         Iterable<Message> messages = messageRepository.findAll();
         model.addAttribute("messages", messages);
+
+        Page<Message> page;
+
+        page = messageRepository.findAll(pageble);
+        model.addAttribute("url", "/main");
+        model.addAttribute("page", page);
         return "main";
     }
+
+
+    @GetMapping("/user-messages/{user}")
+    public String userMessages(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable User user,
+            Model model,
+            @RequestParam(required = false) Message message,
+            @PageableDefault(sort = {"id"}, direction = Sort.Direction.DESC) Pageable pageble
+    ) {
+        Page<Message> page;
+        page = messageRepository.findByAuthor(user, pageble);
+        Set<Message> messages = user.getMessages();
+
+        model.addAttribute("messages", messages);
+        model.addAttribute("message", message);
+        model.addAttribute("isCurrentUser", currentUser.equals(user));
+        model.addAttribute("userChannel", user);
+        model.addAttribute("subscriptionsCount", user.getSubscriptions().size());
+        model.addAttribute("subscribersCount", user.getSubscribers().size());
+        model.addAttribute("isSubscriber", user.getSubscribers().contains(currentUser));
+        model.addAttribute("url", "/user-messages/" + user.getId());
+        model.addAttribute("page", page);
+
+        return "userMessages";
+    }
+
 
     private void saveFile(@Valid Message message, @RequestParam("file") MultipartFile file) throws IOException {
         if (file != null && !file.getOriginalFilename().isEmpty()) {
@@ -90,32 +123,12 @@ public class MainController {
 
                 uploadDir.mkdir();
             }
-
             String filename = UUID.randomUUID().toString() + "." + file.getOriginalFilename();
-
             file.transferTo(new File(uploadPath + "//" + filename));
             message.setFilename(filename);
         }
     }
 
-    @GetMapping("/user-messages/{user}")
-    public String userMessages(
-            @AuthenticationPrincipal User currentUser,
-            @PathVariable User user,
-            Model model,
-            @RequestParam(required = false) Message message
-    ){
-        Set<Message> messages = user.getMessages();
-        model.addAttribute("messages",messages);
-        model.addAttribute("message",message);
-        model.addAttribute("isCurrentUser",currentUser.equals(user));
-        model.addAttribute("userChannel",user);
-        model.addAttribute("subscriptionsCount",user.getSubscriptions().size());
-        model.addAttribute("subscribersCount",user.getSubscribers().size());
-        model.addAttribute("isSubscriber",user.getSubscribers().contains(currentUser));
-
-        return "userMessages";
-    }
 
     @PostMapping("/user-messages/{user}")
     public String updateMessage(
@@ -126,17 +139,17 @@ public class MainController {
             @RequestParam("tag") String tag,
             @RequestParam("file") MultipartFile file
     ) throws IOException {
-        if (message.getAuthor().equals(currentUser)){
-            if (!StringUtils.isEmpty(text)){
+        if (message.getAuthor().equals(currentUser)) {
+            if (!StringUtils.isEmpty(text)) {
                 message.setText(text);
             }
-            if (!StringUtils.isEmpty(tag)){
+            if (!StringUtils.isEmpty(tag)) {
                 message.setTag(tag);
             }
-            saveFile(message,file);
+            saveFile(message, file);
             messageRepository.save(message);
         }
-        return "redirect:/user-messages/"+user;
+        return "redirect:/user-messages/" + user;
     }
 
 }
