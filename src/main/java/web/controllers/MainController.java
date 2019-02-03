@@ -82,7 +82,6 @@ public class MainController {
         model.addAttribute("messages", messages);
 
         Page<Message> page;
-
         page = messageRepository.findAll(pageble);
         model.addAttribute("url", "/main");
         model.addAttribute("page", page);
