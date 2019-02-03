@@ -1,7 +1,8 @@
 <#include "security.ftl">
-
+<#import "pager.ftl" as p>
+<@p.pager url page/>
 <div class="card-columns" id="message-list">
-    <#list  messages as message>
+    <#list  page.content as message>
         <div class="card m-2" data-id="${message.id}">
             <#if message.filename??>
                 <img class="card-img-top" src="/img/${message.filename}"/>
@@ -20,3 +21,4 @@
         No message
     </#list>
 </div>
+<@p.pager url page/>

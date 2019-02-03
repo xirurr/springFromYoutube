@@ -1,5 +1,7 @@
 package web.repositories;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.CrudRepository;
 
 import web.domain.Message;
@@ -10,5 +12,6 @@ import java.util.List;
 // CRUD refers Create, Read, Update, Delete
 
 public interface MessageRepository extends CrudRepository<Message, Integer> {
-    List<Message> findByTag(String tag);
+    Page<Message> findByTag(String tag, Pageable pageable);
+    Page<Message> findAll(Pageable pageable);
 }
