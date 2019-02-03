@@ -1,13 +1,13 @@
 <#include "security.ftl">
 
-<div class="card-columns">
+<div class="card-columns" id="message-list">
     <#list  messages as message>
-        <div class="card m-2">
+        <div class="card m-2" data-id="${message.id}">
             <#if message.filename??>
-                <img class="card-img-top" src="/img/${message.filename}">
+                <img class="card-img-top" src="/img/${message.filename}"/>
             </#if>
-            <span>MESSAGE: ${message.text}</span><br/>
-            <i>TAG: #${message.tag}</i>
+            <span>${message.text}</span>
+            <i>#${message.tag}</i>
             <div class="card-footer text-muted">
                 <a href="/user-messages/${message.author.id}"> ${message.authorName}</a>
                 <#if message.author.id == currentUserId>
